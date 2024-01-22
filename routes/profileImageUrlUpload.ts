@@ -6,9 +6,9 @@
 import fs = require('fs')
 import { type Request, type Response, type NextFunction } from 'express'
 import logger from '../lib/logger'
-
 import { UserModel } from '../models/user'
 import * as utils from '../lib/utils'
+import { URL } from 'url'
 const security = require('../lib/insecurity')
 const request = require('request')
 
@@ -16,6 +16,13 @@ module.exports = function profileImageUrlUpload () {
   return (req: Request, res: Response, next: NextFunction) => {
     if (req.body.imageUrl !== undefined) {
       const url = req.body.imageUrl
+      const parsedUrl = new URL(url)
+      const trustedDomains = ['trusted1.com', 'trusted2.com'] // Add your trusted domains here
+
+      if (!trustedDomains.includes(parsedUrl.hostname)) {
+        return next(new Error('Invalid domain.'))
+      }
+
       if (url.match(/(.)*solve\/challenges\/server-side(.)*/) !== null) req.app.locals.abused_ssrf_bug = true
       const loggedInUser = security.authenticatedUsers.get(req.cookies.token)
       if (loggedInUser) {
